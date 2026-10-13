@@ -1,0 +1,43 @@
+.dsh-delete-last-turn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(28px + var(--dsh-content-font-delta, 0px));
+  height: calc(28px + var(--dsh-content-font-delta, 0px));
+  padding: 6px;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+.dsh-delete-last-turn-action svg {
+  width: calc(17px + var(--dsh-content-font-delta, 0px));
+  height: calc(17px + var(--dsh-content-font-delta, 0px));
+}
+.dsh-delete-last-turn-action:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+}
+.dsh-delete-last-turn-action[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.4;
+}
+.dsh-delete-last-turn-action:focus-visible {
+  outline: 2px solid var(--dsw-alias-label-secondary);
+  outline-offset: 2px;
+}
+.dsh-delete-last-turn-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.dsh-delete-last-turn-failure {
+  color: var(--dsw-alias-label-secondary);
+  font-size: var(--dsh-content-font-size-secondary, 13px);
+}

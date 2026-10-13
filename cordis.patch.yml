@@ -1,0 +1,3 @@
+- insert:
+    - id: deshark42-session-tree
+      name: '@deshark42/dsh-session-tree'

@@ -1,6 +1,43 @@
 {
+  "name": "@deshark42/dsh-session-tree",
+  "version": "0.1.0",
+  "description": "Session management extensions for dsh, starting with last-turn deletion",
+  "author": { "name": "deshark42", "url": "https://github.com/deshark42" },
+  "repository": { "type": "git", "url": "git+https://github.com/deshark42/dsh-session-tree.git" },
+  "license": "MIT",
   "type": "module",
+  "engines": { "node": "^22.19.0 || >=24" },
+  "main": "lib/host.js",
+  "exports": { ".": "./lib/host.js", "./client": "./lib/client.js" },
+  "files": ["lib", "cordis.patch.yml", "README.md", "LICENSE", "src/lib/vendor/LICENSE", "THIRD-PARTY.md"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-chat",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-session"
+      ],
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "4.0.5-alpha.1",
+    "@deepseek-ai/dsh-commands": "0.2.1-alpha.2",
+    "@deepseek-ai/dsh-session": "0.2.1-alpha.2",
+    "@deepseek-ai/dsh-session-format": "0.2.1-alpha.2",
+    "@deepseek-ai/dsh-session-format-catalog": "0.2.1-alpha.2",
+    "@deepseek-ai/dsh-compaction-image-offload": "0.2.1-alpha.2"
+  },
   "scripts": {
+    "build": "node tooling/build.mjs",
+    "prepack": "npm run build",
+    "test": "node tooling/test.mjs",
+    "typecheck": "node tooling/typecheck.mjs",
+    "test:stock": "node tooling/check-stock.mjs",
     "verify-agent-note-classification": "node scripts/verify-agent-note-classification.ts",
     "verify-agent-note-format": "node scripts/verify-agent-note-format.ts",
     "verify-archived-agent-notes": "node scripts/verify-archived-agent-notes.ts"
