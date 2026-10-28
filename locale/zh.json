@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session Tree 会话管理",
+    "description": "管理 DSH 会话；当前提供失败请求手动重试，保留当前轮次，不追加聊天消息。"
+  }
+}

@@ -1,5 +1,29 @@
 {
+  "name": "@deshark/dsh-session-tree",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Session management for DeepSeek Harness, including manual recovery of failed model requests.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deshark42/dsh-session-tree.git"
+  },
+  "homepage": "https://github.com/deshark42/dsh-session-tree#readme",
   "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./src/retry/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": ["index.js", "src/", "cordis.patch.yml", "locale/*.json", "icon.svg", "README.md", "docs/"],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-conversation", "@deepseek-ai/dsh-client-locale"]
+    }
+  },
   "scripts": {
     "verify": "npm run verify-agent-note-classification && npm run verify-agent-note-format && npm run verify-archived-agent-notes",
     "verify-agent-note-classification": "node scripts/verify-agent-note-classification.ts",

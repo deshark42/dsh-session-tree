@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session Tree",
+    "description": "Manage DSH sessions. Currently provides manual retry for failed model requests without adding another chat message."
+  }
+}
