@@ -22,6 +22,7 @@ export class RequestRecovery {
     const entry = this.#pending.get(sessionId);
     return {
       version: 1,
+      pluginVersion: '0.1.1',
       sessionId,
       pending: entry === undefined ? null : { ...entry.value },
     };

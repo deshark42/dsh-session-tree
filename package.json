@@ -1,6 +1,6 @@
 {
   "name": "@deshark/dsh-session-tree",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Session management for DeepSeek Harness, including manual recovery of failed model requests.",
   "repository": {
@@ -12,6 +12,7 @@
   "exports": {
     ".": "./index.js",
     "./client": "./src/retry/client.js",
+    "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },

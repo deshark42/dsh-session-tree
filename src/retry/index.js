@@ -9,6 +9,8 @@ export function apply(ctx) {
   const active = new Set();
   ctx.provide('sessionRetryFailedRequest', recovery);
 
+  // Wrap existing recovery so its terminal decision returns here even when
+  // another listener short-circuits the rest of the waterfall.
   const stopRecovery = ctx.on('agent/request-error', (payload, next) => {
     if (lifetime.signal.aborted) return Promise.resolve(undefined);
     const operation = (async () => {
@@ -22,7 +24,7 @@ export function apply(ctx) {
     active.add(operation);
     void operation.then(() => active.delete(operation), () => active.delete(operation));
     return operation;
-  });
+  }, { prepend: true });
 
   ctx.effect(() => ctx.connection.fetch.register({
     path: '/api/deshark.session-retry',

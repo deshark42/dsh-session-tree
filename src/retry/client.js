@@ -8,6 +8,12 @@ window.__ModuleLoader__.load({
     const dictionaries = {
       zh: {
         failed: '请求失败，等待手动重试',
+        ready: '重试服务已连接',
+        waiting: '没有等待重试的请求',
+        ended: '这一轮已经结束，当前版本只能重试保持等待的请求。',
+        connecting: '正在连接重试服务…',
+        missing: '重试服务未加载，请检查插件是否启用并重启 DSH。',
+        unavailable: '重试服务不可用，请检查插件状态。',
         retry: '重试失败请求',
         retrying: '正在重试…',
         hint: '保留已完成步骤，不追加消息；点击“停止”可结束等待。',
@@ -17,6 +23,12 @@ window.__ModuleLoader__.load({
       },
       en: {
         failed: 'Request failed. Waiting for manual retry.',
+        ready: 'Retry service connected',
+        waiting: 'No request is waiting for retry',
+        ended: 'This turn has ended. This version can only retry requests that are still waiting.',
+        connecting: 'Connecting to retry service…',
+        missing: 'Retry service is not loaded. Check that the plugin is enabled and restart DSH.',
+        unavailable: 'Retry service unavailable. Check the plugin status.',
         retry: 'Retry failed request',
         retrying: 'Retrying…',
         hint: 'Completed steps are kept. No message is added. Use Stop to end the wait.',
@@ -66,7 +78,11 @@ window.__ModuleLoader__.load({
         try {
           const query = new URLSearchParams({ sessionId });
           const response = await fetch(`${ROUTE}?${query}`, { signal, cache: 'no-store' });
-          if (!response.ok || response.body === null) throw new Error(`HTTP ${response.status}`);
+          if (!response.ok || response.body === null) {
+            const error = new Error(`HTTP ${response.status}`);
+            error.status = response.status;
+            throw error;
+          }
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let buffer = '';
@@ -92,14 +108,16 @@ window.__ModuleLoader__.load({
           }
         } catch (error) {
           if (signal.aborted) return;
-          disconnected();
+          disconnected(error.status === 404 ? 'missing' : 'unavailable');
           await reconnectDelay(signal);
         }
       }
     }
 
-    function RetryControl({ sessionId, t }) {
-      const [state, setState] = React.useState({ sessionId, pending: null, connected: true });
+    function RetryControl({ sessionId, t, useSession }) {
+      const lastAgentError = useSession(snapshot => snapshot.lastAgentError);
+      const running = useSession(snapshot => snapshot.running);
+      const [state, setState] = React.useState({ sessionId, pending: null, connected: false, connection: 'connecting' });
       const [busy, setBusy] = React.useState(null);
       const [error, setError] = React.useState(null);
       const lifetime = React.useRef(null);
@@ -108,7 +126,7 @@ window.__ModuleLoader__.load({
         const abort = new AbortController();
         lifetime.current = abort;
         submitted.current = null;
-        setState({ sessionId, pending: null, connected: true });
+        setState({ sessionId, pending: null, connected: false, connection: 'connecting' });
         setBusy(null);
         setError(null);
         void watch(sessionId, abort.signal, value => {
@@ -118,13 +136,13 @@ window.__ModuleLoader__.load({
             setBusy(null);
             setError(null);
           }
-        }, () => setState(previous => ({ ...previous, connected: false })));
+        }, connection => setState(previous => ({ ...previous, connected: false, connection })));
         return () => { abort.abort(); lifetime.current = null; };
       }, [sessionId]);
 
       const current = state.sessionId === sessionId ? state : null;
       const pending = current?.pending;
-      if (current === null || (pending === null && current.connected)) return null;
+      if (current === null) return null;
 
       async function retry() {
         const abort = lifetime.current;
@@ -161,16 +179,19 @@ window.__ModuleLoader__.load({
 
       return h('section', { className: 'dsh-session-retry', 'aria-label': t('retry') },
         h('style', null, css),
-        pending === null ? null : h(React.Fragment, null,
-          h('div', { className: 'dsh-session-retry-row' },
-            h('div', { className: 'dsh-session-retry-title', role: 'status' }, t('failed')),
-            h('button', { type: 'button', onClick: retry, disabled: busy !== null || !current.connected },
+        h('div', { className: 'dsh-session-retry-row' },
+            h('div', { className: 'dsh-session-retry-title', role: 'status' },
+              pending !== null ? t('failed') : current.connected ? t('ready') : t(current.connection)),
+            h('button', { type: 'button', onClick: retry, disabled: pending === null || busy !== null || !current.connected,
+              title: pending === null ? t('waiting') : t('retry') },
               h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, 'aria-hidden': true },
                 h('path', { d: 'M20 10a8 8 0 1 0 .1 4M20 4v6h-6', strokeLinecap: 'round', strokeLinejoin: 'round' })),
-              t(busy === pending.requestId ? 'retrying' : 'retry'))),
+              t(pending !== null && busy === pending.requestId ? 'retrying' : 'retry'))),
+        pending === null ? h('div', { className: 'dsh-session-retry-hint' },
+          lastAgentError !== null && !running ? t('ended') : t('waiting')) : h(React.Fragment, null,
           h('div', { className: 'dsh-session-retry-detail' }, `${pending.provider} · ${pending.code}\n${pending.message}`),
           h('div', { className: 'dsh-session-retry-hint' }, t('hint'))),
-        current.connected ? null : h('div', { role: 'status' }, t('connection')),
+        h('div', { className: 'dsh-session-retry-hint' }, `Session Tree · Client 0.1.1${current.pluginVersion === undefined ? '' : ` · Host ${current.pluginVersion}`}`),
         error === null ? null : h('div', { role: 'alert' }, t(error)));
     }
 
