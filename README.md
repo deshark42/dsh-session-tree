@@ -2,7 +2,7 @@
 
 DeepSeek Harness 的会话管理插件。本仓库根目录就是可安装的 bundle，各项功能放在 `src/` 下。
 
-当前已编写的功能是[重试失败请求](docs/retry.md)：输入框上方常驻重试控件，自动重试停止并进入手动等待后按钮可用，在原轮次内重新请求模型，保留已完成的步骤和工具结果，不追加“继续”消息。桌面端实际恢复行为仍需验证。
+当前已编写的功能是[重试失败请求](docs/retry.md)：在聊天输入框输入 `/retry`，重试当前会话中正在等待恢复的失败请求。在原轮次内重新请求模型，保留已完成的步骤和工具结果，不追加“继续”消息。无需常驻面板。桌面端实际恢复行为仍需验证。
 
 ## 安装到桌面端
 
@@ -31,10 +31,10 @@ C:\Users\deshark\code\dsh-session-tree
 ## 目录
 
 ```text
-package.json       插件包和 Client manifest
+package.json       插件包 manifest
 cordis.patch.yml   bundle 注册
 index.js           Host 入口，组合各功能
-src/retry/         失败请求重试：Host、Client、恢复状态
+src/retry/         失败请求重试：Host 命令、工具、恢复状态
 locale/            插件展示信息
 icon.svg           插件图标
 docs/retry.md      重试功能说明及手动验收步骤
@@ -42,6 +42,6 @@ docs/retry.md      重试功能说明及手动验收步骤
 scripts/           Agent Notes 门禁
 ```
 
-`./client` 当前直接导出重试功能的 Client 入口，其模块 id 对应整个插件包。后续功能继续在同一 bundle 内扩展。
+`/retry` 使用 DSH 自带的命令入口，无独立 Client 模块。后续功能继续在同一 bundle 内扩展。
 
 运行测试由使用者完成。重试功能的适用范围和限制见[功能说明](docs/retry.md)。

@@ -1,6 +1,6 @@
-import { RequestRecovery, RecoveryConflict, runAction, watchResponse } from './recovery.js';
+import { RequestRecovery, runAction } from './recovery.js';
 
-export const inject = ['agents', 'connection', 'tools'];
+export const inject = ['agents', 'commands', 'tools'];
 
 /** Install manual recovery after the existing provider recovery policies. */
 export function apply(ctx) {
@@ -26,37 +26,26 @@ export function apply(ctx) {
     return operation;
   }, { prepend: true });
 
-  ctx.effect(() => ctx.connection.fetch.register({
-    path: '/api/deshark.session-retry',
-    methods: ['GET', 'POST'],
-    requestBody: 'buffered',
-    async fetch(request) {
-      if (lifetime.signal.aborted) return Response.json({ error: 'PLUGIN_UNLOADED' }, { status: 503 });
-      if (request.method === 'GET') {
-        const sessionId = new URL(request.url).searchParams.get('sessionId');
-        if (sessionId === null || sessionId.length === 0) {
-          return Response.json({ error: 'SESSION_ID_REQUIRED' }, { status: 400 });
-        }
-        return watchResponse(recovery, sessionId, request.signal, lifetime.signal);
+  ctx.effect(() => ctx.commands.register({
+    definitionId: '@deshark/dsh-session-tree/retry',
+    name: 'retry',
+    description: '重试当前会话中等待恢复的失败请求',
+    handler({ agent, rawInput, signal }) {
+      signal.throwIfAborted();
+      if (rawInput.trim() !== '') {
+        return { kind: 'error', text: '用法：/retry（无需参数）' };
       }
-      let input;
-      try {
-        input = await request.json();
-      } catch (error) {
-        if (request.signal.aborted) throw error;
-        return Response.json({ error: 'INVALID_JSON' }, { status: 400 });
+      const sessionId = agent.session.id;
+      const { pending } = runAction(recovery, { action: 'status', sessionId });
+      if (pending === null) {
+        return { kind: 'error', text: '当前会话没有等待重试的失败请求。已结束的失败轮次无法通过 /retry 恢复。' };
       }
-      try {
-        return Response.json(runAction(recovery, input));
-      } catch (error) {
-        if (error instanceof RecoveryConflict) {
-          return Response.json({ error: 'REQUEST_CHANGED' }, { status: 409 });
-        }
-        if (error instanceof TypeError) return Response.json({ error: 'INVALID_ACTION' }, { status: 400 });
-        throw error;
-      }
+      // Read and consume the current identity synchronously, before another
+      // invocation can release it or a subsequent failure can replace it.
+      runAction(recovery, { action: 'retry', sessionId, requestId: pending.requestId });
+      return { kind: 'success', text: '已重试失败请求，将在原轮次中继续执行。' };
     },
-  }), 'session-retry: authenticated application endpoint');
+  }), 'session-retry: /retry command');
 
   ctx.effect(() => ctx.tools.register({
     name: 'session_retry_failed_request',
@@ -87,5 +76,5 @@ export function apply(ctx) {
     lifetime.abort();
     recovery.dispose();
     await Promise.allSettled([...active]);
-  }, 'session-retry: release pending requests and transports');
+  }, 'session-retry: release pending requests');
 }
